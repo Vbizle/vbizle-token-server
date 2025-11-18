@@ -17,27 +17,23 @@ export default async function handler(req, res) {
     const livekitUrl = process.env.LIVEKIT_URL;
 
     if (!apiKey || !apiSecret || !livekitUrl) {
-      return res.status(500).json({ error: "ENV_EKSİK" });
+      return res.status(500).json({ error: "ENV eksik!" });
     }
 
     const at = new AccessToken(apiKey, apiSecret, { identity });
-
     at.addGrant({
       roomJoin: true,
       room,
       canPublish: true,
       canSubscribe: true,
-      canPublishData: true,
+      canPublishData: true
     });
 
     const token = await at.toJwt();
 
-    return res.status(200).json({
-      token,
-      url: livekitUrl,
-    });
+    return res.status(200).json({ token, url: livekitUrl });
   } catch (err) {
-    console.error("TOKEN HATASI:", err);
-    return res.status(500).json({ error: "TOKEN_OLUSTURMA_HATASI" });
+    console.error("Token Hatası:", err);
+    res.status(500).json({ error: "TOKEN_OLUSTURMA_HATASI" });
   }
 }
