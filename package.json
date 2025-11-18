@@ -1,0 +1,15 @@
+{
+  "name": "vbizle-token-server",
+  "version": "1.0.0",
+  "description": "LiveKit token server for Vbizle",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "livekit-server-sdk": "^1.3.0",
+    "cors": "^2.8.5"
+  }
+}
