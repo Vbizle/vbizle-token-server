@@ -2,7 +2,7 @@ import { AccessToken } from "livekit-server-sdk";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "Sadece POST isteği kabul edilir" });
+    return res.status(405).json({ error: "Sadece POST destekleniyor" });
   }
 
   try {
@@ -26,14 +26,14 @@ export default async function handler(req, res) {
       room,
       canPublish: true,
       canSubscribe: true,
-      canPublishData: true
+      canPublishData: true,
     });
 
     const token = await at.toJwt();
 
-    return res.status(200).json({ token, url: livekitUrl });
+    return res.json({ token, url: livekitUrl });
   } catch (err) {
     console.error("Token Hatası:", err);
-    res.status(500).json({ error: "TOKEN_OLUSTURMA_HATASI" });
+    return res.status(500).json({ error: "TOKEN_OLUSTURMA_HATASI" });
   }
 }
