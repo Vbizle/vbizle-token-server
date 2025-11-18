@@ -1,0 +1,13 @@
+{
+  "name": "vbizle-token-server",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "express": "^5.1.0",
+    "cors": "^2.8.5",
+    "livekit-server-sdk": "^2.14.1"
+  },
+  "scripts": {
+    "vercel-build": "echo 'API Routes - Build gerekmiyor'"
+  }
+}
