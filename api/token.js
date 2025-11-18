@@ -27,8 +27,10 @@ export default async function handler(req, res) {
     });
 
     const token = await at.toJwt();
-    return res.status(200).json({ token, url: livekitUrl });
+
+    return res.json({ token, url: livekitUrl });
   } catch (err) {
-    return res.status(500).json({ error: "TOKEN_OLUSTURMA_HATASI" });
+    console.error("Token Hatası:", err);
+    res.status(500).json({ error: "TOKEN_OLUSTURMA_HATASI" });
   }
 }
