@@ -21,7 +21,6 @@ export default async function handler(req, res) {
     }
 
     const at = new AccessToken(apiKey, apiSecret, { identity });
-
     at.addGrant({
       roomJoin: true,
       room,
@@ -34,7 +33,7 @@ export default async function handler(req, res) {
 
     return res.json({ token, url: livekitUrl });
   } catch (err) {
-    console.error("Token Error:", err);
-    return res.status(500).json({ error: "TOKEN_ERROR" });
+    console.error("Token Hatası:", err);
+    res.status(500).json({ error: "TOKEN_OLUSTURMA_HATASI" });
   }
 }
