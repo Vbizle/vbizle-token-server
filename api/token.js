@@ -16,14 +16,19 @@ export default async function handler(req, res) {
     const apiSecret = process.env.LIVEKIT_API_SECRET;
     const livekitUrl = process.env.LIVEKIT_URL;
 
-    const at = new AccessToken(apiKey, apiSecret, { identity });
+    // **name eklendi (zorunlu)**
+    const at = new AccessToken(apiKey, apiSecret, {
+      identity,
+      name: identity,
+    });
 
     at.addGrant({
       roomJoin: true,
       room,
       canPublish: true,
       canSubscribe: true,
-      canPublishData: true
+      canPublishData: true,
+      canPublishSources: true,
     });
 
     const token = await at.toJwt();
