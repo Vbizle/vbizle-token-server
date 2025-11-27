@@ -1,12 +1,12 @@
-const { AccessToken } = require("livekit-server-sdk");
-const http = require("http");
-const url = require("url");
+import { AccessToken } from "livekit-server-sdk";
+import http from "http";
+import url from "url";
 
 const apiKey = process.env.LIVEKIT_API_KEY;
 const apiSecret = process.env.LIVEKIT_API_SECRET;
 const livekitUrl = process.env.LIVEKIT_URL;
 
-// Debug endpoint
+// DEBUG
 function debugOutput(res) {
   res.writeHead(200, { "Content-Type": "application/json" });
   return res.end(
@@ -35,16 +35,20 @@ const server = http.createServer((req, res) => {
     }
 
     try {
-      const at = new AccessToken(apiKey, apiSecret, { identity });
-      at.addGrant({
+      const token = new AccessToken(apiKey, apiSecret, {
+        identity,
+        ttl: 60 * 60,
+      });
+
+      token.addGrant({
         room,
         roomJoin: true,
       });
 
-      const token = at.toJwt();
+      const jwt = token.toJwt();
 
       res.writeHead(200, { "Content-Type": "application/json" });
-      return res.end(JSON.stringify({ token }));
+      return res.end(JSON.stringify({ token: jwt }));
     } catch (err) {
       res.writeHead(500, { "Content-Type": "application/json" });
       return res.end(JSON.stringify({ error: err.message }));
