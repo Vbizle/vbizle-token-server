@@ -1,12 +1,12 @@
-import { AccessToken } from "livekit-server-sdk";
-import http from "http";
-import url from "url";
+const { AccessToken } = require("livekit-server-sdk");
+const http = require("http");
+const url = require("url");
 
 const apiKey = process.env.LIVEKIT_API_KEY;
 const apiSecret = process.env.LIVEKIT_API_SECRET;
 const livekitUrl = process.env.LIVEKIT_URL;
 
-// DEBUG ENDPOINT
+// Debug endpoint
 function debugOutput(res) {
   res.writeHead(200, { "Content-Type": "application/json" });
   return res.end(
@@ -21,7 +21,6 @@ function debugOutput(res) {
 const server = http.createServer((req, res) => {
   const parsedUrl = url.parse(req.url, true);
 
-  // 👇 DEBUG TEST
   if (parsedUrl.pathname === "/debug") {
     return debugOutput(res);
   }
@@ -35,13 +34,21 @@ const server = http.createServer((req, res) => {
       return res.end(JSON.stringify({ error: "room and identity required" }));
     }
 
-    const at = new AccessToken(apiKey, apiSecret, { identity });
-    at.addGrant({ room, roomJoin: true });
+    try {
+      const at = new AccessToken(apiKey, apiSecret, { identity });
+      at.addGrant({
+        room,
+        roomJoin: true,
+      });
 
-    const token = at.toJwt();
+      const token = at.toJwt();
 
-    res.writeHead(200, { "Content-Type": "application/json" });
-    return res.end(JSON.stringify({ token }));
+      res.writeHead(200, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ token }));
+    } catch (err) {
+      res.writeHead(500, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ error: err.message }));
+    }
   }
 
   res.writeHead(404);
