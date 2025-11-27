@@ -1,12 +1,12 @@
-import { AccessToken } from "livekit-server-sdk";
 import http from "http";
 import url from "url";
+import jwt from "jsonwebtoken";
 
 const apiKey = process.env.LIVEKIT_API_KEY;
 const apiSecret = process.env.LIVEKIT_API_SECRET;
 const livekitUrl = process.env.LIVEKIT_URL;
 
-// 🔍 DEBUG ENDPOINT
+// 🔍 DEBUG
 function debugOutput(res) {
   res.writeHead(200, { "Content-Type": "application/json" });
   return res.end(
@@ -19,53 +19,40 @@ function debugOutput(res) {
 }
 
 const server = http.createServer((req, res) => {
-  const parsedUrl = url.parse(req.url, true);
+  const q = url.parse(req.url, true);
 
-  // /debug → env test
-  if (parsedUrl.pathname === "/debug") {
-    return debugOutput(res);
-  }
+  if (q.pathname === "/debug") return debugOutput(res);
 
-  // /token → asıl iş
-  if (parsedUrl.pathname === "/token") {
-    const room = parsedUrl.query.room;
-    const identity = parsedUrl.query.identity;
+  if (q.pathname === "/token") {
+    const identity = q.query.identity;
+    const room = q.query.room;
 
-    if (!room || !identity) {
+    if (!identity || !room) {
       res.writeHead(400, { "Content-Type": "application/json" });
-      return res.end(
-        JSON.stringify({ error: "room and identity required" })
-      );
+      return res.end(JSON.stringify({ error: "identity & room required" }));
     }
 
-    try {
-      // 🔥 AccessToken oluştur
-      const at = new AccessToken(apiKey, apiSecret, {
-        identity,
-        ttl: 60 * 60, // 1 saat
-      });
-
-      // 🔥 Odaya katılma izni ver
-      at.addGrant({
+    // 🔥 JWT payload
+    const payload = {
+      iss: apiKey,
+      sub: identity,
+      video: {
         room,
-        roomJoin: true,
-      });
+        roomJoin: true
+      }
+    };
 
-      // 🔥 JWT string üret
-      const jwt = at.toJwt();
+    // 🔥 SIGN → gerçek bir JWT üret
+    const token = jwt.sign(payload, apiSecret, {
+      algorithm: "HS256",
+      expiresIn: "1h"
+    });
 
-      res.writeHead(200, { "Content-Type": "application/json" });
-      // 🔥 Burada artık string dönüyoruz, nesne değil
-      return res.end(JSON.stringify({ token: jwt }));
-    } catch (err) {
-      console.error("token error:", err);
-      res.writeHead(500, { "Content-Type": "application/json" });
-      return res.end(JSON.stringify({ error: err.message }));
-    }
+    res.writeHead(200, { "Content-Type": "application/json" });
+    return res.end(JSON.stringify({ token }));
   }
 
-  // Diğer tüm URL’ler
-  res.writeHead(404, { "Content-Type": "text/plain" });
+  res.writeHead(404);
   res.end("Not Found");
 });
 
