@@ -4,7 +4,6 @@ import url from "url";
 
 const apiKey = process.env.LIVEKIT_API_KEY;
 const apiSecret = process.env.LIVEKIT_API_SECRET;
-const livekitUrl = process.env.LIVEKIT_URL; // 🔥 DÜZELTİLDİ
 
 const server = http.createServer((req, res) => {
   const parsedUrl = url.parse(req.url, true);
@@ -18,18 +17,13 @@ const server = http.createServer((req, res) => {
       return res.end(JSON.stringify({ error: "room and identity required" }));
     }
 
-    // ✔ Token oluştur
-    const at = new AccessToken(apiKey, apiSecret, {
-      identity,
-    });
+    const at = new AccessToken(apiKey, apiSecret, { identity });
 
-    // ✔ Room grant ekle
     at.addGrant({
       room,
       roomJoin: true,
     });
 
-    // ✔ Token üret
     const token = at.toJwt();
 
     res.writeHead(200, { "Content-Type": "application/json" });
