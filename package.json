@@ -1,0 +1,11 @@
+{
+  "name": "vbizle-token-server",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node api/token.js"
+  },
+  "dependencies": {
+    "livekit-server-sdk": "^1.4.0"
+  }
+}
