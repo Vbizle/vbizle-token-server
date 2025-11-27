@@ -6,6 +6,6 @@
     "start": "node api/token.js"
   },
   "dependencies": {
-    "livekit-server-sdk": "1.4.0"
+    "livekit-server-sdk": "^1.5.3"
   }
 }
