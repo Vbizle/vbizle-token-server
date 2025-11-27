@@ -6,7 +6,7 @@ const apiKey = process.env.LIVEKIT_API_KEY;
 const apiSecret = process.env.LIVEKIT_API_SECRET;
 const livekitUrl = process.env.LIVEKIT_URL;
 
-// 🔍 DEBUG
+// DEBUG endpoint
 function debugOutput(res) {
   res.writeHead(200, { "Content-Type": "application/json" });
   return res.end(
@@ -21,28 +21,34 @@ function debugOutput(res) {
 const server = http.createServer((req, res) => {
   const q = url.parse(req.url, true);
 
-  if (q.pathname === "/debug") return debugOutput(res);
+  // Debug test
+  if (q.pathname === "/debug") {
+    return debugOutput(res);
+  }
 
+  // Token üret
   if (q.pathname === "/token") {
     const identity = q.query.identity;
     const room = q.query.room;
 
     if (!identity || !room) {
       res.writeHead(400, { "Content-Type": "application/json" });
-      return res.end(JSON.stringify({ error: "identity & room required" }));
+      return res.end(
+        JSON.stringify({ error: "identity & room required" })
+      );
     }
 
-    // 🔥 JWT payload
+    // JWT payload
     const payload = {
       iss: apiKey,
       sub: identity,
       video: {
-        room,
+        room: room,
         roomJoin: true
       }
     };
 
-    // 🔥 SIGN → gerçek bir JWT üret
+    // JWT oluştur (HS256)
     const token = jwt.sign(payload, apiSecret, {
       algorithm: "HS256",
       expiresIn: "1h"
