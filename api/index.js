@@ -1,18 +1,40 @@
 import http from "http";
 import url from "url";
 import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+dotenv.config();
 
 const apiKey = process.env.LIVEKIT_API_KEY;
 const apiSecret = process.env.LIVEKIT_API_SECRET;
 const livekitUrl = process.env.LIVEKIT_URL;
 
-// CORS headers
+/* --------------------------------------------------------
+   CORS
+-------------------------------------------------------- */
 function applyCORS(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 }
 
+/* --------------------------------------------------------
+   DEBUG
+-------------------------------------------------------- */
+function debugOutput(res) {
+  applyCORS(res);
+  res.writeHead(200, { "Content-Type": "application/json" });
+  res.end(
+    JSON.stringify({
+      apiKey: apiKey ? "OK" : "MISSING",
+      apiSecret: apiSecret ? "OK" : "MISSING",
+      livekitUrl: livekitUrl || null,
+    })
+  );
+}
+
+/* --------------------------------------------------------
+   SERVER
+-------------------------------------------------------- */
 const server = http.createServer((req, res) => {
   const q = url.parse(req.url, true);
 
@@ -23,20 +45,12 @@ const server = http.createServer((req, res) => {
     return res.end();
   }
 
-  // Debug
+  // DEBUG
   if (q.pathname === "/debug") {
-    applyCORS(res);
-    res.writeHead(200, { "Content-Type": "application/json" });
-    return res.end(
-      JSON.stringify({
-        key: apiKey ? "OK" : "MISSING",
-        secret: apiSecret ? "OK" : "MISSING",
-        url: livekitUrl || null,
-      })
-    );
+    return debugOutput(res);
   }
 
-  // TOKEN
+  // TOKEN ENDPOINT
   if (q.pathname === "/token") {
     applyCORS(res);
 
@@ -45,21 +59,19 @@ const server = http.createServer((req, res) => {
 
     if (!identity || !room) {
       res.writeHead(400, { "Content-Type": "application/json" });
-      return res.end(
-        JSON.stringify({ error: "identity & room required" })
-      );
+      return res.end(JSON.stringify({ error: "identity & room required" }));
     }
 
     const payload = {
       iss: apiKey,
       sub: identity,
       video: {
-        room: room,
+        room,
         roomJoin: true,
         roomList: true,
         canPublish: true,
-        canSubscribe: true
-      }
+        canSubscribe: true,
+      },
     };
 
     const token = jwt.sign(payload, apiSecret, {
@@ -71,12 +83,15 @@ const server = http.createServer((req, res) => {
     return res.end(JSON.stringify({ token }));
   }
 
+  // NOT FOUND
   applyCORS(res);
   res.writeHead(404);
   res.end("Not Found");
 });
 
-const PORT = process.env.PORT || 10000;
-server.listen(PORT, () => {
-  console.log("Token server running on port " + PORT);
+/* --------------------------------------------------------
+   LISTEN
+-------------------------------------------------------- */
+server.listen(3000, () => {
+  console.log("LiveKit Token Server running on port 3000");
 });
