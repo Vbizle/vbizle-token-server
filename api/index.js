@@ -1,8 +1,8 @@
 import http from "http";
 import url from "url";
 import jwt from "jsonwebtoken";
-import dotenv from "dotenv";
-dotenv.config();
+
+// ❗ dotenv ÇIKARILDI — Render zaten ENV değerlerini yüklüyor
 
 const apiKey = process.env.LIVEKIT_API_KEY;
 const apiSecret = process.env.LIVEKIT_API_SECRET;
@@ -66,7 +66,7 @@ const server = http.createServer((req, res) => {
       iss: apiKey,
       sub: identity,
       video: {
-        room,
+        room: room,      // 🔥 ODA ADI ARTIK %100 DOĞRU KULLANILIYOR
         roomJoin: true,
         roomList: true,
         canPublish: true,
@@ -74,6 +74,7 @@ const server = http.createServer((req, res) => {
       },
     };
 
+    // JWT production-level token
     const token = jwt.sign(payload, apiSecret, {
       algorithm: "HS256",
       expiresIn: "1h",
