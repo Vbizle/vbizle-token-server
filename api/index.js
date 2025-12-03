@@ -1,11 +1,10 @@
 import http from "http";
 import url from "url";
-import jwt from "jsonwebtoken";
+import { AccessToken } from "livekit-server-sdk";
 
 // ENV
 const apiKey = process.env.LIVEKIT_API_KEY;
 const apiSecret = process.env.LIVEKIT_API_SECRET;
-const livekitUrl = process.env.LIVEKIT_URL;
 
 /* --------------------------------------------------------
    CORS
@@ -26,7 +25,6 @@ function debugOutput(res) {
     JSON.stringify({
       apiKey: apiKey ? "OK" : "MISSING",
       apiSecret: apiSecret ? "OK" : "MISSING",
-      livekitUrl: livekitUrl || null,
     })
   );
 }
@@ -34,7 +32,7 @@ function debugOutput(res) {
 /* --------------------------------------------------------
    SERVER
 -------------------------------------------------------- */
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
   const q = url.parse(req.url, true);
 
   // Preflight
@@ -49,7 +47,7 @@ const server = http.createServer((req, res) => {
     return debugOutput(res);
   }
 
-  // TOKEN ENDPOINT
+  // TOKEN
   if (q.pathname === "/token") {
     applyCORS(res);
 
@@ -61,36 +59,33 @@ const server = http.createServer((req, res) => {
       return res.end(JSON.stringify({ error: "identity & room required" }));
     }
 
-    // 🔥 LIVEKIT 2024+ UYUMLU TOKEN
-    const now = Math.floor(Date.now() / 1000);
+    try {
+      // RESMİ LiveKit token oluşturma
+      const at = new AccessToken(apiKey, apiSecret, {
+        identity,
+        ttl: 60 * 60, // 1 saat
+      });
 
-    const payload = {
-      iss: apiKey,
-      sub: identity,
-      exp: now + 60 * 60,
-      nbf: now - 10,
-      grants: {
-        video: {
-          room,
-          roomJoin: true,
-          canPublish: true,
-          canSubscribe: true,
+      at.addGrant({
+        room,
+        roomJoin: true,
+        canPublish: true,
+        canSubscribe: true,
+      });
 
-          // 🔥 CRITICAL FIX → LiveKit artık bunu istiyor!
-          serverUrl: livekitUrl,
-        },
-      },
-    };
+      const token = await at.toJwt();
 
-    const token = jwt.sign(payload, apiSecret, {
-      algorithm: "HS256",
-    });
+      res.writeHead(200, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ token }));
 
-    res.writeHead(200, { "Content-Type": "application/json" });
-    return res.end(JSON.stringify({ token }));
+    } catch (e) {
+      console.error("Token create error:", e);
+      res.writeHead(500, { "Content-Type": "application/json" });
+      return res.end(JSON.stringify({ error: "token_create_failed" }));
+    }
   }
 
-  // NOT FOUND
+  // 404
   applyCORS(res);
   res.writeHead(404);
   res.end("Not Found");
