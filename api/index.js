@@ -2,8 +2,7 @@ import http from "http";
 import url from "url";
 import jwt from "jsonwebtoken";
 
-// ❗ dotenv ÇIKARILDI — Render zaten ENV değerlerini yüklüyor
-
+// ENV
 const apiKey = process.env.LIVEKIT_API_KEY;
 const apiSecret = process.env.LIVEKIT_API_SECRET;
 const livekitUrl = process.env.LIVEKIT_URL;
@@ -62,22 +61,24 @@ const server = http.createServer((req, res) => {
       return res.end(JSON.stringify({ error: "identity & room required" }));
     }
 
+    // 🔥 LIVEKIT 2024 UYUMLU PAYLOAD
     const payload = {
       iss: apiKey,
       sub: identity,
-      video: {
-        room: room,      // 🔥 ODA ADI ARTIK %100 DOĞRU KULLANILIYOR
-        roomJoin: true,
-        roomList: true,
-        canPublish: true,
-        canSubscribe: true,
+      exp: Math.floor(Date.now() / 1000) + 60 * 60, // 1 saat
+      nbf: Math.floor(Date.now() / 1000) - 10,
+      grants: {
+        video: {
+          room,
+          roomJoin: true,
+          canPublish: true,
+          canSubscribe: true,
+        },
       },
     };
 
-    // JWT production-level token
     const token = jwt.sign(payload, apiSecret, {
       algorithm: "HS256",
-      expiresIn: "1h",
     });
 
     res.writeHead(200, { "Content-Type": "application/json" });
