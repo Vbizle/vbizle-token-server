@@ -6,7 +6,6 @@
     "start": "node api/index.js"
   },
   "dependencies": {
-    "jsonwebtoken": "^9.0.2",
-    "livekit-server-sdk": "^2.3.0"
+    "jsonwebtoken": "^9.0.2"
   }
 }
