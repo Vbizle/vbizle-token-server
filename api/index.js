@@ -1,10 +1,11 @@
 import http from "http";
 import url from "url";
-import { AccessToken } from "livekit-server-sdk";
+import jwt from "jsonwebtoken";
 
 // ENV
 const apiKey = process.env.LIVEKIT_API_KEY;
 const apiSecret = process.env.LIVEKIT_API_SECRET;
+const livekitUrl = process.env.LIVEKIT_URL;
 
 /* --------------------------------------------------------
    CORS
@@ -25,6 +26,7 @@ function debugOutput(res) {
     JSON.stringify({
       apiKey: apiKey ? "OK" : "MISSING",
       apiSecret: apiSecret ? "OK" : "MISSING",
+      livekitUrl: livekitUrl || null,
     })
   );
 }
@@ -32,7 +34,7 @@ function debugOutput(res) {
 /* --------------------------------------------------------
    SERVER
 -------------------------------------------------------- */
-const server = http.createServer(async (req, res) => {
+const server = http.createServer((req, res) => {
   const q = url.parse(req.url, true);
 
   // Preflight
@@ -59,29 +61,28 @@ const server = http.createServer(async (req, res) => {
       return res.end(JSON.stringify({ error: "identity & room required" }));
     }
 
-    try {
-      // 🔥 RESMİ LIVEKIT TOKEN OLUŞTURMA — %100 UYUMLU
-      const at = new AccessToken(apiKey, apiSecret, {
-        identity,
-        ttl: 60 * 60, // 1 saat
-      });
+    // 🔥 LIVEKIT 2024 UYUMLU PAYLOAD
+    const payload = {
+      iss: apiKey,
+      sub: identity,
+      exp: Math.floor(Date.now() / 1000) + 60 * 60, // 1 saat
+      nbf: Math.floor(Date.now() / 1000) - 10,
+      grants: {
+        video: {
+          room,
+          roomJoin: true,
+          canPublish: true,
+          canSubscribe: true,
+        },
+      },
+    };
 
-      at.addGrant({
-        room,
-        roomJoin: true,
-        canPublish: true,
-        canSubscribe: true,
-      });
+    const token = jwt.sign(payload, apiSecret, {
+      algorithm: "HS256",
+    });
 
-      const token = await at.toJwt();
-
-      res.writeHead(200, { "Content-Type": "application/json" });
-      return res.end(JSON.stringify({ token }));
-    } catch (e) {
-      console.error("Token create error:", e);
-      res.writeHead(500, { "Content-Type": "application/json" });
-      return res.end(JSON.stringify({ error: "token_create_failed" }));
-    }
+    res.writeHead(200, { "Content-Type": "application/json" });
+    return res.end(JSON.stringify({ token }));
   }
 
   // NOT FOUND
@@ -95,4 +96,4 @@ const server = http.createServer(async (req, res) => {
 -------------------------------------------------------- */
 server.listen(3000, () => {
   console.log("LiveKit Token Server running on port 3000");
-});
+});  bu şuan mevcutta olan bunu gerekli şekilde düzenle tam kod ver çalışsın artık
