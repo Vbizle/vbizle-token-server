@@ -61,18 +61,23 @@ const server = http.createServer((req, res) => {
       return res.end(JSON.stringify({ error: "identity & room required" }));
     }
 
-    // 🔥 LIVEKIT 2024 UYUMLU PAYLOAD
+    // 🔥 LIVEKIT 2024+ UYUMLU TOKEN
+    const now = Math.floor(Date.now() / 1000);
+
     const payload = {
       iss: apiKey,
       sub: identity,
-      exp: Math.floor(Date.now() / 1000) + 60 * 60, // 1 saat
-      nbf: Math.floor(Date.now() / 1000) - 10,
+      exp: now + 60 * 60,
+      nbf: now - 10,
       grants: {
         video: {
           room,
           roomJoin: true,
           canPublish: true,
           canSubscribe: true,
+
+          // 🔥 CRITICAL FIX → LiveKit artık bunu istiyor!
+          serverUrl: livekitUrl,
         },
       },
     };
